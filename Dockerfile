@@ -142,7 +142,16 @@ CLAUDE_LOG=/tmp/claude-output.log
 CLAUDE_WRAPPER=/tmp/run-claude.sh
 cat > "${CLAUDE_WRAPPER}" <<EOF
 #!/bin/bash
-exec "${CLAUDE_BIN}" --no-sandbox --disable-gpu --disable-dev-shm-usage "\$@" >> "${CLAUDE_LOG}" 2>&1
+LOG="${CLAUDE_LOG}"
+echo "=== claude wrapper started at \$(date) ===" >> "\$LOG"
+echo "binary : ${CLAUDE_BIN}" >> "\$LOG"
+echo "exists : \$(test -x '${CLAUDE_BIN}' && echo YES || echo NO)" >> "\$LOG"
+echo "type   : \$(file '${CLAUDE_BIN}' 2>&1)" >> "\$LOG"
+echo "line1  : \$(head -1 '${CLAUDE_BIN}' 2>&1)" >> "\$LOG"
+echo "DISPLAY: \${DISPLAY}" >> "\$LOG"
+echo "--- output below ---" >> "\$LOG"
+ELECTRON_ENABLE_LOGGING=1 "${CLAUDE_BIN}" --no-sandbox --disable-gpu --disable-dev-shm-usage --disable-setuid-sandbox "\$@" >> "\$LOG" 2>&1
+echo "--- exit code: \$? ---" >> "\$LOG"
 EOF
 chmod +x "${CLAUDE_WRAPPER}"
 
@@ -164,12 +173,10 @@ xpra start ":${DISPLAY_NUM}" \
     --resize-display=yes \
     --sharing=yes || true
 
-# ── Print claude-desktop output to surface crash details in docker logs ───────
-if [ -f "${CLAUDE_LOG}" ] && [ -s "${CLAUDE_LOG}" ]; then
-    echo "[entrypoint] === claude-desktop output ==="
-    cat "${CLAUDE_LOG}"
-    echo "[entrypoint] === end ==="
-fi
+# ── Always print the claude-desktop log (even if empty) for diagnostics ───────
+echo "[entrypoint] === claude-desktop log ==="
+cat "${CLAUDE_LOG}" 2>/dev/null || echo "(no log file created)"
+echo "[entrypoint] === end ==="
 ENTRYPOINT_EOF
 RUN chmod +x /usr/local/bin/entrypoint.sh
 

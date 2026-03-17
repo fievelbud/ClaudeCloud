@@ -19,6 +19,7 @@ services:
     volumes:
       - claude_config:/home/claude/.config/Claude
       - claude_cache:/home/claude/.cache/Claude
+      - /mnt/Data/claude-data:/home/claude/data
 
     # Electron requires relaxed seccomp to start
     security_opt:

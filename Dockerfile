@@ -40,7 +40,7 @@ RUN git clone --depth 1 https://github.com/aaddrick/claude-desktop-debian.git .
 # ── Build the .deb  ───────────────────────────────────────────────────────────
 # Runs as root inside Docker — build.sh detects this and skips sudo.
 # Output: claude-desktop_<version>_amd64.deb (or arm64) in /build/
-RUN DEBIAN_FRONTEND=noninteractive bash build.sh --build deb
+RUN DEBIAN_FRONTEND=noninteractive DPKG_DEB_COMPRESSOR_TYPE=xz bash build.sh --build deb
 
 # Normalise to a fixed name so the runtime stage can COPY it without knowing
 # the version string.

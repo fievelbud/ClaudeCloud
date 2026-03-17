@@ -122,20 +122,41 @@ RESOLUTION="${DISPLAY_RESOLUTION:-1920x1080x24}"
 DISPLAY_SIZE="${RESOLUTION%x*}"
 
 # ── Find Claude Desktop binary ────────────────────────────────────────────────
+# Resolve to the full path so xpra's child environment (stripped PATH) can find it.
 CLAUDE_BIN=""
-for candidate in /opt/Claude/claude-desktop claude-desktop claude; do
-    if [ -x "$candidate" ] || command -v "$candidate" > /dev/null 2>&1; then
+for candidate in /opt/Claude/claude-desktop /usr/bin/claude-desktop /usr/local/bin/claude-desktop; do
+    if [ -x "$candidate" ]; then
         CLAUDE_BIN="$candidate"
         break
     fi
 done
 
+# Fall back: search common prefixes by name
+if [ -z "$CLAUDE_BIN" ]; then
+    for name in claude-desktop claude; do
+        FOUND=$(command -v "$name" 2>/dev/null || true)
+        if [ -n "$FOUND" ] && [ -x "$FOUND" ]; then
+            CLAUDE_BIN="$FOUND"
+            break
+        fi
+    done
+fi
+
+# Last resort: find any claude* executable under /opt or /usr
+if [ -z "$CLAUDE_BIN" ]; then
+    CLAUDE_BIN=$(find /opt /usr -type f -perm /u+x -name "claude*" 2>/dev/null \
+        | grep -v '\.asar\|\.js\|\.css\|\.html\|\.png\|\.svg' \
+        | head -1 || true)
+fi
+
+echo "[entrypoint] Installed claude* files:"
+find /opt /usr -name "claude*" -type f 2>/dev/null | head -20 || true
+
 if [ -z "$CLAUDE_BIN" ]; then
     echo "[entrypoint] ERROR: Claude Desktop binary not found."
-    echo "             The .deb built from aaddrick/claude-desktop-debian"
-    echo "             should install to /opt/Claude/claude-desktop."
     exit 1
 fi
+echo "[entrypoint] Using binary: ${CLAUDE_BIN}"
 
 # ── Wrapper to capture claude-desktop stdout/stderr ───────────────────────────
 CLAUDE_LOG=/tmp/claude-output.log

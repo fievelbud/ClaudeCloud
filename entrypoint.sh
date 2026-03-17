@@ -24,20 +24,36 @@ if [ -z "$CLAUDE_BIN" ]; then
     exit 1
 fi
 
+# ── Wrapper script so xpra captures claude-desktop stdout/stderr ──────────────
+CLAUDE_LOG=/tmp/claude-output.log
+CLAUDE_WRAPPER=/tmp/run-claude.sh
+cat > "${CLAUDE_WRAPPER}" <<EOF
+#!/bin/bash
+exec "${CLAUDE_BIN}" --no-sandbox --disable-gpu --disable-dev-shm-usage "\$@" >> "${CLAUDE_LOG}" 2>&1
+EOF
+chmod +x "${CLAUDE_WRAPPER}"
+
 # ── Start Xpra (manages virtual display + serves HTML5 browser client) ────────
 echo "[entrypoint] Starting Xpra on display :${DISPLAY_NUM} @ ${DISPLAY_SIZE}"
 echo "[entrypoint] HTML5 client available on port 10000"
 echo "[entrypoint] Launching ${CLAUDE_BIN}"
 
-exec xpra start ":${DISPLAY_NUM}" \
+xpra start ":${DISPLAY_NUM}" \
     --bind-tcp=0.0.0.0:10000 \
     --html=on \
     --daemon=no \
-    --start-child="${CLAUDE_BIN} --no-sandbox --disable-gpu" \
+    --start-child="${CLAUDE_WRAPPER}" \
     --exit-with-children=yes \
     --notifications=no \
     --bell=no \
     --mdns=no \
     --pulseaudio=no \
     --resize-display=yes \
-    --sharing=yes
+    --sharing=yes || true
+
+# ── Print claude-desktop output to surface crash details in docker logs ───────
+if [ -f "${CLAUDE_LOG}" ] && [ -s "${CLAUDE_LOG}" ]; then
+    echo "[entrypoint] === claude-desktop output ==="
+    cat "${CLAUDE_LOG}"
+    echo "[entrypoint] === end ==="
+fi

@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     ca-certificates \
     gnupg \
+    sudo \
     # 7-zip — extracts the Windows .exe / .nupkg
     p7zip-full \
     # wrestool / icotool — extracts Windows icons
@@ -32,18 +33,25 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get install -y --no-install-recommends nodejs && \
     rm -rf /var/lib/apt/lists/*
 
+# ── Non-root build user (build.sh refuses to run as root) ────────────────────
+RUN useradd -m builduser && \
+    echo 'builduser ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+
 # ── Clone the packaging repo ──────────────────────────────────────────────────
 WORKDIR /build
-RUN git clone --depth 1 https://github.com/aaddrick/claude-desktop-debian.git .
+RUN git clone --depth 1 https://github.com/aaddrick/claude-desktop-debian.git . && \
+    chown -R builduser:builduser /build
 
 # ── Build the .deb  ───────────────────────────────────────────────────────────
-# Runs as root inside Docker — build.sh detects this and skips sudo.
+# build.sh refuses to run as root — run as builduser with passwordless sudo
 # Output: claude-desktop_<version>_amd64.deb (or arm64) in /build/
+USER builduser
 RUN DEBIAN_FRONTEND=noninteractive DPKG_DEB_COMPRESSOR_TYPE=xz bash build.sh --build deb
+USER root
 
 # Normalise to a fixed name so the runtime stage can COPY it without knowing
 # the version string.
-RUN mv claude-desktop_*.deb /tmp/claude-desktop.deb
+RUN mv /build/claude-desktop_*.deb /tmp/claude-desktop.deb
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Stage 2 — runtime

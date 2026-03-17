@@ -25,7 +25,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && rm -rf /var/lib/apt/lists/*
 
 # ── Node.js 20 (the system nodejs on Ubuntu 22.04 is v12 — too old) ───────────
+# Purge any Ubuntu-packaged nodejs/libnode-dev first to avoid dpkg conflicts
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get remove -y --purge nodejs libnode-dev npm 2>/dev/null || true && \
+    apt-get autoremove -y && \
     apt-get install -y --no-install-recommends nodejs && \
     rm -rf /var/lib/apt/lists/*
 

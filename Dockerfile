@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 # ══════════════════════════════════════════════════════════════════════════════
 # Stage 1 — builder
 # Clones aaddrick/claude-desktop-debian and runs build.sh to produce a .deb
@@ -110,7 +111,66 @@ RUN useradd -m -s /bin/bash claude && \
     chown -R claude:claude /home/claude
 
 # ── Entrypoint ────────────────────────────────────────────────────────────────
-COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+# Inline via BuildKit heredoc — no dependency on COPY from build context.
+COPY <<'ENTRYPOINT_EOF' /usr/local/bin/entrypoint.sh
+#!/usr/bin/env bash
+# entrypoint.sh — starts Xpra with HTML5 browser client, then Claude Desktop
+set -euo pipefail
+
+DISPLAY_NUM="${DISPLAY#:}"
+RESOLUTION="${DISPLAY_RESOLUTION:-1920x1080x24}"
+DISPLAY_SIZE="${RESOLUTION%x*}"
+
+# ── Find Claude Desktop binary ────────────────────────────────────────────────
+CLAUDE_BIN=""
+for candidate in /opt/Claude/claude-desktop claude-desktop claude; do
+    if [ -x "$candidate" ] || command -v "$candidate" > /dev/null 2>&1; then
+        CLAUDE_BIN="$candidate"
+        break
+    fi
+done
+
+if [ -z "$CLAUDE_BIN" ]; then
+    echo "[entrypoint] ERROR: Claude Desktop binary not found."
+    echo "             The .deb built from aaddrick/claude-desktop-debian"
+    echo "             should install to /opt/Claude/claude-desktop."
+    exit 1
+fi
+
+# ── Wrapper to capture claude-desktop stdout/stderr ───────────────────────────
+CLAUDE_LOG=/tmp/claude-output.log
+CLAUDE_WRAPPER=/tmp/run-claude.sh
+cat > "${CLAUDE_WRAPPER}" <<EOF
+#!/bin/bash
+exec "${CLAUDE_BIN}" --no-sandbox --disable-gpu --disable-dev-shm-usage "\$@" >> "${CLAUDE_LOG}" 2>&1
+EOF
+chmod +x "${CLAUDE_WRAPPER}"
+
+# ── Start Xpra (manages virtual display + serves HTML5 browser client) ────────
+echo "[entrypoint] Starting Xpra on display :${DISPLAY_NUM} @ ${DISPLAY_SIZE}"
+echo "[entrypoint] HTML5 client available on port 10000"
+echo "[entrypoint] Launching ${CLAUDE_BIN}"
+
+xpra start ":${DISPLAY_NUM}" \
+    --bind-tcp=0.0.0.0:10000 \
+    --html=on \
+    --daemon=no \
+    --start-child="${CLAUDE_WRAPPER}" \
+    --exit-with-children=yes \
+    --notifications=no \
+    --bell=no \
+    --mdns=no \
+    --pulseaudio=no \
+    --resize-display=yes \
+    --sharing=yes || true
+
+# ── Print claude-desktop output to surface crash details in docker logs ───────
+if [ -f "${CLAUDE_LOG}" ] && [ -s "${CLAUDE_LOG}" ]; then
+    echo "[entrypoint] === claude-desktop output ==="
+    cat "${CLAUDE_LOG}"
+    echo "[entrypoint] === end ==="
+fi
+ENTRYPOINT_EOF
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 EXPOSE 10000

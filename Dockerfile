@@ -22,10 +22,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     # .deb packaging
     dpkg-dev \
     fakeroot \
-    # Node.js runtime (build.sh will auto-download v20 if system version is low,
-    # but providing it here avoids the extra download and speeds up the build)
-    nodejs \
-    npm \
   && rm -rf /var/lib/apt/lists/*
 
 # ── Node.js 20 (the system nodejs on Ubuntu 22.04 is v12 — too old) ───────────

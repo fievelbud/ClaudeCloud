@@ -53,7 +53,6 @@ RUN mv claude-desktop_*.deb /tmp/claude-desktop.deb
 FROM ubuntu:22.04
 
 ARG DEBIAN_FRONTEND=noninteractive
-ARG VNC_PASSWORD=claude
 
 # ── Runtime system dependencies ───────────────────────────────────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -76,10 +75,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxi6 \
     libxrandr2 \
     libxrender1 \
-    # X11 / virtual display / VNC
+    # X11 / virtual display / Xpra
     xvfb \
-    x11vnc \
     x11-utils \
+    xpra \
+    python3-websockify \
     # DBus (system tray, notifications)
     dbus-x11 \
     # Fonts
@@ -102,16 +102,11 @@ RUN useradd -m -s /bin/bash claude && \
     mkdir -p /home/claude/.config /home/claude/.cache && \
     chown -R claude:claude /home/claude
 
-# ── VNC password ─────────────────────────────────────────────────────────────
-RUN mkdir -p /home/claude/.vnc && \
-    x11vnc -storepasswd "$VNC_PASSWORD" /home/claude/.vnc/passwd && \
-    chown -R claude:claude /home/claude/.vnc
-
 # ── Entrypoint ────────────────────────────────────────────────────────────────
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-EXPOSE 5900
+EXPOSE 10000
 
 USER claude
 WORKDIR /home/claude

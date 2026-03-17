@@ -2,33 +2,18 @@ services:
   claude-desktop:
     build:
       context: .
-      args:
-        # Change the VNC login password at build time (default: "claude")
-        VNC_PASSWORD: "${VNC_PASSWORD:-claude}"
     image: claude-desktop:latest
     container_name: claude-desktop
 
-    # ── Display options (choose one) ──────────────────────────────────────────
-    # Option A — VNC (default, works on any OS):
-    #   Connect any VNC client to localhost:5900.
-    #   Password: VNC_PASSWORD (default: claude)
-    #
-    # Option B — X11 forwarding (Linux hosts only):
-    #   Comment out the 'ports' block and uncomment the X11 blocks below.
+    # ── Display options ────────────────────────────────────────────────────────
+    # Xpra HTML5 client — open http://<host>:<XPRA_PORT> in any browser.
+    # No VNC client or extra software required.
 
     ports:
-      - "${VNC_PORT:-5900}:5900"
-
-    # Option B — X11 forwarding (uncomment all three blocks):
-    # environment:
-    #   DISPLAY: "${DISPLAY}"
-    # volumes:
-    #   - /tmp/.X11-unix:/tmp/.X11-unix:rw
-    # Run first: xhost +local:docker
+      - "${XPRA_PORT:-10000}:10000"
 
     environment:
       DISPLAY_RESOLUTION: "${DISPLAY_RESOLUTION:-1920x1080x24}"
-      NO_VNC: "${NO_VNC:-0}"
 
     # Persist config and cache across container restarts
     volumes:
@@ -42,11 +27,11 @@ services:
     restart: unless-stopped
 
     healthcheck:
-      test: ["CMD", "bash", "-c", "DISPLAY=:99 xdpyinfo > /dev/null 2>&1"]
+      test: ["CMD", "bash", "-c", "ss -tln | grep ':10000'"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 20s
+      start_period: 30s
 
 volumes:
   claude_config:

@@ -33,11 +33,11 @@ exec xpra start ":${DISPLAY_NUM}" \
     --bind-tcp=0.0.0.0:10000 \
     --html=on \
     --daemon=no \
-    --start="${CLAUDE_BIN} --no-sandbox --disable-gpu" \
+    --start-child="${CLAUDE_BIN} --no-sandbox --disable-gpu" \
     --exit-with-children=yes \
     --notifications=no \
     --bell=no \
     --mdns=no \
     --pulseaudio=no \
-    --resize-display="${DISPLAY_SIZE}" \
+    --resize-display=yes \
     --sharing=yes

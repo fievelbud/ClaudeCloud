@@ -80,11 +80,87 @@ After 4 failed attempts, report the error to the user.
 
 ```
 ClaudeCloud/
-├── CLAUDE.md          # This file — AI assistant guide
-└── ...                # Source code to be added
+├── CLAUDE.md              # This file — AI assistant guide
+├── Dockerfile             # Builds the Claude Desktop container image
+├── docker-compose.yml     # Orchestrates the container with volumes & ports
+└── entrypoint.sh          # Container startup: Xvfb → VNC → Claude Desktop
 ```
 
 Update this tree as directories and files are added to the project.
+
+---
+
+## Docker — Claude Desktop
+
+### How it works
+
+The container runs Claude Desktop (an Electron app) inside a headless Ubuntu
+22.04 environment. A virtual display is provided by **Xvfb** and exposed over
+**VNC** on port 5900 so any VNC client can connect.
+
+```
+Xvfb :99  →  x11vnc :5900  →  VNC client (RealVNC, TigerVNC, etc.)
+```
+
+### Prerequisites
+
+- Docker ≥ 24 and Docker Compose v2
+- The official Claude Desktop Linux `.deb` — download from <https://claude.ai/download>
+
+### Build
+
+```bash
+# Pass the direct URL to the Claude Desktop .deb package
+CLAUDE_DEB_URL=https://example.com/claude-desktop_<version>_amd64.deb \
+  docker compose build
+```
+
+Or export it once:
+
+```bash
+export CLAUDE_DEB_URL=https://example.com/claude-desktop_<version>_amd64.deb
+docker compose build
+```
+
+### Run
+
+```bash
+docker compose up -d
+```
+
+Then connect a VNC client to `localhost:5900`.
+Default password: **`claude`** (set `VNC_PASSWORD` env var to change it).
+
+### X11 forwarding (Linux hosts only)
+
+For native-speed rendering without VNC, uncomment the X11 block in
+`docker-compose.yml` and run:
+
+```bash
+xhost +local:docker
+docker compose up -d
+```
+
+### Environment variables
+
+| Variable            | Default        | Description                          |
+|---------------------|----------------|--------------------------------------|
+| `CLAUDE_DEB_URL`    | *(required)*   | URL to the Claude Desktop `.deb`     |
+| `VNC_PASSWORD`      | `claude`       | VNC login password                   |
+| `VNC_PORT`          | `5900`         | Host port mapped to container VNC    |
+| `DISPLAY_RESOLUTION`| `1920x1080x24` | Virtual display resolution & depth   |
+| `NO_VNC`            | `0`            | Set to `1` to skip the VNC server    |
+
+### Persistent data
+
+Two named volumes keep your config and cache across container restarts:
+
+| Volume         | Container path               |
+|----------------|------------------------------|
+| `claude_config`| `/home/claude/.config/Claude`|
+| `claude_cache` | `/home/claude/.cache/Claude` |
+
+To reset all data: `docker compose down -v`
 
 ---
 

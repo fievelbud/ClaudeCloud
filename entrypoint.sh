@@ -34,8 +34,10 @@ fi
 # ── 3. Launch Claude Desktop ──────────────────────────────────────────────────
 # Find the installed binary (package may name it claude or claude-desktop)
 CLAUDE_BIN=""
-for candidate in claude-desktop claude; do
-    if command -v "$candidate" > /dev/null 2>&1; then
+# aaddrick/claude-desktop-debian installs to /opt/Claude/claude-desktop
+# Fall back to PATH-based lookup for other package formats
+for candidate in /opt/Claude/claude-desktop claude-desktop claude; do
+    if [ -x "$candidate" ] || command -v "$candidate" > /dev/null 2>&1; then
         CLAUDE_BIN="$candidate"
         break
     fi
@@ -43,8 +45,8 @@ done
 
 if [ -z "$CLAUDE_BIN" ]; then
     echo "[entrypoint] ERROR: Claude Desktop binary not found."
-    echo "             Build the image with CLAUDE_DEB_URL pointing to the"
-    echo "             official Linux .deb from https://claude.ai/download"
+    echo "             The .deb built from aaddrick/claude-desktop-debian"
+    echo "             should install to /opt/Claude/claude-desktop."
     echo ""
     echo "[entrypoint] Keeping container alive for debugging (VNC/X11 is up)."
     wait $XVFB_PID

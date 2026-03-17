@@ -94,32 +94,39 @@ Update this tree as directories and files are added to the project.
 
 ### How it works
 
-The container runs Claude Desktop (an Electron app) inside a headless Ubuntu
-22.04 environment. A virtual display is provided by **Xvfb** and exposed over
-**VNC** on port 5900 so any VNC client can connect.
+The image uses a **multi-stage build**:
+
+1. **Builder stage** — clones [`aaddrick/claude-desktop-debian`](https://github.com/aaddrick/claude-desktop-debian),
+   downloads the official Claude Desktop Windows installer, extracts the
+   Electron app, patches it for Linux, and packages it as a `.deb`.
+2. **Runtime stage** — installs the `.deb` into a clean Ubuntu 22.04 image,
+   adds a virtual display (Xvfb) and VNC server (x11vnc).
 
 ```
-Xvfb :99  →  x11vnc :5900  →  VNC client (RealVNC, TigerVNC, etc.)
+build.sh (aaddrick) → .deb → Ubuntu 22.04 + Xvfb :99 → x11vnc :5900 → VNC client
 ```
+
+No pre-built `.deb` URL is needed — everything is built automatically during
+`docker compose build`.
 
 ### Prerequisites
 
 - Docker ≥ 24 and Docker Compose v2
-- The official Claude Desktop Linux `.deb` — download from <https://claude.ai/download>
+- Internet access at build time (to clone the repo and download the installer)
 
 ### Build
 
 ```bash
-# Pass the direct URL to the Claude Desktop .deb package
-CLAUDE_DEB_URL=https://example.com/claude-desktop_<version>_amd64.deb \
-  docker compose build
+docker compose build
 ```
 
-Or export it once:
+The build takes a few minutes the first time. Subsequent builds are faster due
+to Docker layer caching.
+
+To change the VNC password at build time:
 
 ```bash
-export CLAUDE_DEB_URL=https://example.com/claude-desktop_<version>_amd64.deb
-docker compose build
+VNC_PASSWORD=mysecret docker compose build
 ```
 
 ### Run
@@ -133,8 +140,8 @@ Default password: **`claude`** (set `VNC_PASSWORD` env var to change it).
 
 ### X11 forwarding (Linux hosts only)
 
-For native-speed rendering without VNC, uncomment the X11 block in
-`docker-compose.yml` and run:
+For native-speed rendering without VNC, comment out the `ports` block in
+`docker-compose.yml`, uncomment the X11 blocks, then run:
 
 ```bash
 xhost +local:docker
@@ -145,8 +152,7 @@ docker compose up -d
 
 | Variable            | Default        | Description                          |
 |---------------------|----------------|--------------------------------------|
-| `CLAUDE_DEB_URL`    | *(required)*   | URL to the Claude Desktop `.deb`     |
-| `VNC_PASSWORD`      | `claude`       | VNC login password                   |
+| `VNC_PASSWORD`      | `claude`       | VNC login password (build-time arg)  |
 | `VNC_PORT`          | `5900`         | Host port mapped to container VNC    |
 | `DISPLAY_RESOLUTION`| `1920x1080x24` | Virtual display resolution & depth   |
 | `NO_VNC`            | `0`            | Set to `1` to skip the VNC server    |

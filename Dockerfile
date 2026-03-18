@@ -85,11 +85,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxrender1 \
     # Audio (required by Electron)
     libasound2 \
-    # X11 / virtual display / Xpra
+    # X11 / virtual display
     xvfb \
     x11-utils \
-    xpra \
-    python3-websockify \
     # DBus (system tray, notifications)
     dbus-x11 \
     # Fonts
@@ -97,8 +95,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     fonts-noto-color-emoji \
     # Misc
     ca-certificates \
+    gnupg \
+    curl \
     procps \
   && rm -rf /var/lib/apt/lists/*
+
+# ── Xpra from xpra.org (includes full HTML5 client) ──────────────────────────
+RUN curl -fsSL https://xpra.org/gpg.asc | gpg --dearmor -o /usr/share/keyrings/xpra.gpg && \
+    echo "deb [signed-by=/usr/share/keyrings/xpra.gpg] https://xpra.org/repos/jammy/ release main" \
+        > /etc/apt/sources.list.d/xpra.list && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+        xpra \
+        xpra-html5 \
+        python3-websockify \
+    && rm -rf /var/lib/apt/lists/*
 
 # ── Install the .deb built in Stage 1 ────────────────────────────────────────
 COPY --from=builder /tmp/claude-desktop.deb /tmp/claude-desktop.deb

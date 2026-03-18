@@ -162,23 +162,31 @@ cat "${CLAUDE_BIN}" || true
 echo "[entrypoint] Electron binaries:"
 find /usr/lib/claude-desktop /opt -type f -name "electron" 2>/dev/null || true
 
-# ── Wrapper to capture claude-desktop stdout/stderr ───────────────────────────
+# ── Wrapper: call electron directly so output comes to us, not the launcher log ─
 CLAUDE_LOG=/tmp/claude-output.log
 CLAUDE_WRAPPER=/tmp/run-claude.sh
+ELECTRON_BIN=/usr/lib/claude-desktop/node_modules/electron/dist/electron
+ELECTRON_APP=/usr/lib/claude-desktop/node_modules/electron/dist/resources/app.asar
 cat > "${CLAUDE_WRAPPER}" <<EOF
 #!/bin/bash
 LOG="${CLAUDE_LOG}"
 echo "=== claude wrapper started at \$(date) ===" >> "\$LOG"
-echo "binary : ${CLAUDE_BIN}" >> "\$LOG"
-echo "exists : \$(test -x '${CLAUDE_BIN}' && echo YES || echo NO)" >> "\$LOG"
-echo "type   : \$(file '${CLAUDE_BIN}' 2>&1)" >> "\$LOG"
-echo "line1  : \$(head -1 '${CLAUDE_BIN}' 2>&1)" >> "\$LOG"
 echo "DISPLAY: \${DISPLAY}" >> "\$LOG"
-echo "--- output below ---" >> "\$LOG"
-ELECTRON_ENABLE_LOGGING=1 "${CLAUDE_BIN}" --no-sandbox --disable-gpu --disable-dev-shm-usage --disable-setuid-sandbox "\$@" >> "\$LOG" 2>&1
+echo "--- electron output below ---" >> "\$LOG"
+cd /usr/lib/claude-desktop
+ELECTRON_ENABLE_LOGGING=1 "${ELECTRON_BIN}" \
+    --no-sandbox \
+    --disable-gpu \
+    --disable-dev-shm-usage \
+    --disable-setuid-sandbox \
+    "${ELECTRON_APP}" >> "\$LOG" 2>&1
 echo "--- exit code: \$? ---" >> "\$LOG"
+# Also print the launcher's own log if it exists
+echo "--- launcher log ---" >> "\$LOG"
+cat /home/claude/.config/Claude/logs/main.log >> "\$LOG" 2>/dev/null || true
 EOF
 chmod +x "${CLAUDE_WRAPPER}"
+
 
 # ── Start Xpra (manages virtual display + serves HTML5 browser client) ────────
 echo "[entrypoint] Starting Xpra on display :${DISPLAY_NUM} @ ${DISPLAY_SIZE}"

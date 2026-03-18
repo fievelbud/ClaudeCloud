@@ -83,6 +83,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxi6 \
     libxrandr2 \
     libxrender1 \
+    # Audio (required by Electron)
+    libasound2 \
     # X11 / virtual display / Xpra
     xvfb \
     x11-utils \

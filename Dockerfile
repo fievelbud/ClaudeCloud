@@ -182,6 +182,11 @@ ELECTRON_BIN=/usr/lib/claude-desktop/node_modules/electron/dist/electron
 ELECTRON_APP=/usr/lib/claude-desktop/node_modules/electron/dist/resources/app.asar
 cat > "${CLAUDE_WRAPPER}" <<EOF
 #!/bin/bash
+export HOME=/home/claude
+export XDG_CONFIG_HOME="\${HOME}/.config"
+export XDG_CACHE_HOME="\${HOME}/.cache"
+export XDG_DATA_HOME="\${HOME}/.local/share"
+mkdir -p "\${HOME}/.config/Claude/logs" "\${HOME}/.cache/Claude"
 LOG="${CLAUDE_LOG}"
 echo "=== claude wrapper started at \$(date) ===" >> "\$LOG"
 echo "DISPLAY: \${DISPLAY}" >> "\$LOG"

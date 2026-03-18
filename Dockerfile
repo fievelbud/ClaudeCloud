@@ -157,6 +157,10 @@ if [ -z "$CLAUDE_BIN" ]; then
     exit 1
 fi
 echo "[entrypoint] Using binary: ${CLAUDE_BIN}"
+echo "[entrypoint] Script contents:"
+cat "${CLAUDE_BIN}" || true
+echo "[entrypoint] Electron binaries:"
+find /usr/lib/claude-desktop /opt -type f -name "electron" 2>/dev/null || true
 
 # ── Wrapper to capture claude-desktop stdout/stderr ───────────────────────────
 CLAUDE_LOG=/tmp/claude-output.log

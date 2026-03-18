@@ -28,7 +28,7 @@ services:
     restart: unless-stopped
 
     healthcheck:
-      test: ["CMD", "bash", "-c", "ss -tln | grep ':10000'"]
+      test: ["CMD", "bash", "-c", "cat </dev/null >/dev/tcp/localhost/10000"]
       interval: 10s
       timeout: 5s
       retries: 5

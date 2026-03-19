@@ -108,6 +108,7 @@ RUN wget -q -O /usr/share/keyrings/xpra.asc https://xpra.org/xpra.asc && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
         xpra \
+        xpra-x11 \
         xpra-html5 \
         python3-websockify \
     && rm -rf /var/lib/apt/lists/*

@@ -101,9 +101,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && rm -rf /var/lib/apt/lists/*
 
 # ── Xpra from xpra.org (includes full HTML5 client) ──────────────────────────
-RUN curl -fsSL https://xpra.org/gpg.asc | gpg --dearmor -o /usr/share/keyrings/xpra.gpg && \
-    echo "deb [signed-by=/usr/share/keyrings/xpra.gpg] https://xpra.org/repos/jammy/ release main" \
-        > /etc/apt/sources.list.d/xpra.list && \
+RUN wget -q -O /usr/share/keyrings/xpra.asc https://xpra.org/xpra.asc && \
+    printf 'Types: deb\nURIs: https://xpra.org\nSuites: jammy\nComponents: main\nSigned-By: /usr/share/keyrings/xpra.asc\nArchitectures: amd64\n' \
+        > /etc/apt/sources.list.d/xpra.sources && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
         xpra \

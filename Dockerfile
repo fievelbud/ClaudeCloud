@@ -97,6 +97,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     gnupg \
     curl \
+    wget \
     procps \
   && rm -rf /var/lib/apt/lists/*
 

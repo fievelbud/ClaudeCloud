@@ -132,6 +132,13 @@ COPY <<'ENTRYPOINT_EOF' /usr/local/bin/entrypoint.sh
 # entrypoint.sh — starts Xpra with HTML5 browser client, then Claude Desktop
 set -euo pipefail
 
+# ── Privilege drop: fix volume permissions then re-exec as claude ─────────────
+if [ "$(id -u)" = "0" ]; then
+    mkdir -p /home/claude/.config/Claude/logs /home/claude/.cache/Claude
+    chown -R claude:claude /home/claude/.config /home/claude/.cache
+    exec su claude -s /bin/bash -c "exec /usr/local/bin/entrypoint.sh"
+fi
+
 DISPLAY_NUM="${DISPLAY#:}"
 RESOLUTION="${DISPLAY_RESOLUTION:-1920x1080x24}"
 DISPLAY_SIZE="${RESOLUTION%x*}"
@@ -235,7 +242,6 @@ RUN chmod +x /usr/local/bin/entrypoint.sh
 
 EXPOSE 10000
 
-USER claude
 WORKDIR /home/claude
 
 ENV DISPLAY=:99

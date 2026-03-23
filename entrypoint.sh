@@ -33,6 +33,10 @@ exec "${CLAUDE_BIN}" --no-sandbox --disable-gpu --disable-dev-shm-usage "\$@" >>
 EOF
 chmod +x "${CLAUDE_WRAPPER}"
 
+# ── Clean up stale X11/Xpra lock files from previous container runs ───────────
+rm -f "/tmp/.X${DISPLAY_NUM}-lock" "/tmp/.X11-unix/X${DISPLAY_NUM}"
+rm -f "/tmp/xpra/${DISPLAY_NUM}/server.pid"
+
 # ── Start Xpra (manages virtual display + serves HTML5 browser client) ────────
 echo "[entrypoint] Starting Xpra on display :${DISPLAY_NUM} @ ${DISPLAY_SIZE}"
 echo "[entrypoint] HTML5 client available on port 10000"

@@ -50,6 +50,10 @@ exec google-chrome-stable \
 EOF
 chmod +x "${CHROME_WRAPPER}"
 
+# ── Ensure /tmp/.X11-unix exists with correct permissions ─────────────────────
+mkdir -p /tmp/.X11-unix
+chmod 1777 /tmp/.X11-unix
+
 # ── Clean up stale X11/Xpra lock files from previous container runs ───────────
 rm -f "/tmp/.X${DISPLAY_NUM}-lock" "/tmp/.X11-unix/X${DISPLAY_NUM}"
 rm -f "/tmp/xpra/${DISPLAY_NUM}/server.pid"

@@ -40,7 +40,7 @@ RUN useradd -m builduser && \
 
 # ── Clone the packaging repo ──────────────────────────────────────────────────
 WORKDIR /build
-RUN git clone --depth 1 https://github.com/aaddrick/claude-desktop-debian.git . && \
+RUN git clone --depth 1 https://github.com/fievelbud/claude-desktop-debian.git . && \
     chown -R builduser:builduser /build
 
 # ── Build the .deb  ───────────────────────────────────────────────────────────

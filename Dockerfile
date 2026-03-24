@@ -125,6 +125,20 @@ RUN apt-get update && \
     rm /tmp/claude-desktop.deb && \
     rm -rf /var/lib/apt/lists/*
 
+# ── Google Chrome ─────────────────────────────────────────────────────────────
+RUN curl -fsSL https://dl.google.com/linux/linux_signing_key.pub \
+        | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg && \
+    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] https://dl.google.com/linux/chrome/deb/ stable main" \
+        > /etc/apt/sources.list.d/google-chrome.list && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends google-chrome-stable && \
+    rm -rf /var/lib/apt/lists/*
+
+# ── Claude Chrome extension — force-install via managed policy ────────────────
+RUN mkdir -p /etc/opt/chrome/policies/managed && \
+    printf '{\n  "ExtensionInstallForcelist": [\n    "ofpnmcalabcbjgholdjcjblkibolbppb;https://clients2.google.com/service/update2/crx"\n  ]\n}\n' \
+        > /etc/opt/chrome/policies/managed/claude-extension.json
+
 # ── Non-root user ─────────────────────────────────────────────────────────────
 RUN useradd -m -s /bin/bash claude && \
     mkdir -p /home/claude/.config /home/claude/.cache && \
@@ -236,6 +250,22 @@ cat /home/claude/.config/Claude/logs/main.log >> "\$LOG" 2>/dev/null || true
 EOF
 chmod +x "${CLAUDE_WRAPPER}"
 
+# ── Chrome wrapper ────────────────────────────────────────────────────────────
+CHROME_WRAPPER=/tmp/run-chrome.sh
+cat > "${CHROME_WRAPPER}" <<EOF
+#!/bin/bash
+export HOME=/home/claude
+export XDG_CONFIG_HOME="\${HOME}/.config"
+export XDG_CACHE_HOME="\${HOME}/.cache"
+mkdir -p "\${HOME}/.config/google-chrome"
+exec google-chrome-stable \
+    --no-sandbox \
+    --disable-gpu \
+    --disable-dev-shm-usage \
+    --disable-setuid-sandbox \
+    --user-data-dir="\${HOME}/.config/google-chrome"
+EOF
+chmod +x "${CHROME_WRAPPER}"
 
 # ── Start Xpra (manages virtual display + serves HTML5 browser client) ────────
 echo "[entrypoint] Starting Xpra on display :${DISPLAY_NUM} @ ${DISPLAY_SIZE}"
@@ -247,6 +277,7 @@ xpra start ":${DISPLAY_NUM}" \
     --html=on \
     --daemon=no \
     --start-child="${CLAUDE_WRAPPER}" \
+    --start-child="${CHROME_WRAPPER}" \
     --exit-with-children=yes \
     --notifications=no \
     --bell=no \

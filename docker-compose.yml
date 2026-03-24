@@ -20,6 +20,7 @@ services:
       - /mnt/Data/claude-config:/home/claude/.config/Claude
       - /mnt/Data/claude-cache:/home/claude/.cache/Claude
       - /mnt/Data/claude-data:/home/claude/data
+      - /mnt/Data/chrome-config:/home/claude/.config/google-chrome
 
     # Electron requires relaxed seccomp to start
     security_opt:

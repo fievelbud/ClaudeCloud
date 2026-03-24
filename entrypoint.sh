@@ -33,6 +33,23 @@ exec "${CLAUDE_BIN}" --no-sandbox --disable-gpu --disable-dev-shm-usage "\$@" >>
 EOF
 chmod +x "${CLAUDE_WRAPPER}"
 
+# ── Chrome wrapper ────────────────────────────────────────────────────────────
+CHROME_WRAPPER=/tmp/run-chrome.sh
+cat > "${CHROME_WRAPPER}" <<EOF
+#!/bin/bash
+export HOME=/home/claude
+export XDG_CONFIG_HOME="\${HOME}/.config"
+export XDG_CACHE_HOME="\${HOME}/.cache"
+mkdir -p "\${HOME}/.config/google-chrome"
+exec google-chrome-stable \
+    --no-sandbox \
+    --disable-gpu \
+    --disable-dev-shm-usage \
+    --disable-setuid-sandbox \
+    --user-data-dir="\${HOME}/.config/google-chrome"
+EOF
+chmod +x "${CHROME_WRAPPER}"
+
 # ── Clean up stale X11/Xpra lock files from previous container runs ───────────
 rm -f "/tmp/.X${DISPLAY_NUM}-lock" "/tmp/.X11-unix/X${DISPLAY_NUM}"
 rm -f "/tmp/xpra/${DISPLAY_NUM}/server.pid"
@@ -47,6 +64,7 @@ xpra start ":${DISPLAY_NUM}" \
     --html=on \
     --daemon=no \
     --start-child="${CLAUDE_WRAPPER}" \
+    --start-child="${CHROME_WRAPPER}" \
     --exit-with-children=yes \
     --notifications=no \
     --bell=no \

@@ -136,7 +136,7 @@ RUN curl -fsSL https://dl.google.com/linux/linux_signing_key.pub \
 
 # ── Claude Chrome extension — force-install via managed policy ────────────────
 RUN mkdir -p /etc/opt/chrome/policies/managed && \
-    printf '{\n  "ExtensionInstallForcelist": [\n    "ofpnmcalabcbjgholdjcjblkibolbppb;https://clients2.google.com/service/update2/crx"\n  ]\n}\n' \
+    printf '{\n  "ExtensionInstallForcelist": [\n    "fcoeoabgfenejglbffodgkkbkcdhcgfn;https://clients2.google.com/service/update2/crx"\n  ]\n}\n' \
         > /etc/opt/chrome/policies/managed/claude-extension.json
 
 # ── Non-root user ─────────────────────────────────────────────────────────────

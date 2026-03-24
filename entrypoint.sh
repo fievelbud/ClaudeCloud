@@ -7,6 +7,8 @@ RESOLUTION="${DISPLAY_RESOLUTION:-1920x1080x24}"
 DISPLAY_SIZE="${RESOLUTION%x*}"                # "1920x1080x24" → "1920x1080"
 
 # ── Find Claude Desktop binary ────────────────────────────────────────────────
+# aaddrick/claude-desktop-debian installs to /opt/Claude/claude-desktop
+# Fall back to PATH-based lookup for other package formats
 CLAUDE_BIN=""
 for candidate in /opt/Claude/claude-desktop claude-desktop claude; do
     if [ -x "$candidate" ] || command -v "$candidate" > /dev/null 2>&1; then
@@ -17,37 +19,18 @@ done
 
 if [ -z "$CLAUDE_BIN" ]; then
     echo "[entrypoint] ERROR: Claude Desktop binary not found."
+    echo "             The .deb built from aaddrick/claude-desktop-debian"
+    echo "             should install to /opt/Claude/claude-desktop."
     exit 1
 fi
 
-echo "[entrypoint] Installed claude* files:"
-find /usr /opt -name 'claude*' 2>/dev/null | sort
-echo "[entrypoint] Using binary: ${CLAUDE_BIN}"
-echo "[entrypoint] Script contents:"
-cat "${CLAUDE_BIN}"
-echo "[entrypoint] Electron binaries:"
-find /usr /opt -name 'electron' -type f 2>/dev/null
-
-# ── Clear stale VM bundle so Claude Desktop downloads a fresh matching one ────
-VM_BUNDLE_DIR="/home/claude/.config/Claude/vm_bundles"
-if [ -d "${VM_BUNDLE_DIR}" ]; then
-    echo "[entrypoint] Clearing stale VM bundle from ${VM_BUNDLE_DIR}"
-    rm -rf "${VM_BUNDLE_DIR}"
-fi
-
-# ── Wrapper that restarts Claude Desktop automatically on crash ───────────────
+# ── Wrapper script so xpra captures claude-desktop stdout/stderr ──────────────
 CLAUDE_LOG=/tmp/claude-output.log
 CLAUDE_WRAPPER=/tmp/run-claude.sh
-cat > "${CLAUDE_WRAPPER}" <<WRAPPER_EOF
+cat > "${CLAUDE_WRAPPER}" <<EOF
 #!/bin/bash
-CLAUDE_BIN="${CLAUDE_BIN}"
-CLAUDE_LOG="${CLAUDE_LOG}"
-while true; do
-    "\${CLAUDE_BIN}" --no-sandbox --disable-gpu --disable-dev-shm-usage "\$@" >> "\${CLAUDE_LOG}" 2>&1
-    echo "[claude-wrapper] Claude Desktop exited (\$?), restarting in 5s..." >> "\${CLAUDE_LOG}"
-    sleep 5
-done
-WRAPPER_EOF
+exec "${CLAUDE_BIN}" --no-sandbox --disable-gpu --disable-dev-shm-usage "\$@" >> "${CLAUDE_LOG}" 2>&1
+EOF
 chmod +x "${CLAUDE_WRAPPER}"
 
 # ── Clean up stale X11/Xpra lock files from previous container runs ───────────
@@ -64,10 +47,17 @@ xpra start ":${DISPLAY_NUM}" \
     --html=on \
     --daemon=no \
     --start-child="${CLAUDE_WRAPPER}" \
-    --exit-with-children=no \
+    --exit-with-children=yes \
     --notifications=no \
     --bell=no \
     --mdns=no \
     --pulseaudio=no \
     --resize-display=yes \
-    --sharing=yes
+    --sharing=yes || true
+
+# ── Print claude-desktop output to surface crash details in docker logs ───────
+if [ -f "${CLAUDE_LOG}" ] && [ -s "${CLAUDE_LOG}" ]; then
+    echo "[entrypoint] === claude-desktop output ==="
+    cat "${CLAUDE_LOG}"
+    echo "[entrypoint] === end ==="
+fi

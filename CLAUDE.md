@@ -159,16 +159,14 @@ docker compose up -d
 
 ### Persistent data
 
-Host-path bind mounts keep your config and cache across container restarts:
+Two named volumes keep your config and cache across container restarts:
 
-| Host path                 | Container path                        |
-|---------------------------|---------------------------------------|
-| `/mnt/Data/claude-config` | `/home/claude/.config/Claude`         |
-| `/mnt/Data/claude-cache`  | `/home/claude/.cache/Claude`          |
-| `/mnt/Data/claude-data`   | `/home/claude/data`                   |
-| `/mnt/Data/chrome-config` | `/home/claude/.config/google-chrome`  |
+| Volume         | Container path               |
+|----------------|------------------------------|
+| `claude_config`| `/home/claude/.config/Claude`|
+| `claude_cache` | `/home/claude/.cache/Claude` |
 
-To reset all data: `docker compose down -v` then delete the corresponding host paths.
+To reset all data: `docker compose down -v`
 
 ---
 

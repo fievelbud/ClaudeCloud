@@ -113,6 +113,11 @@ RUN wget -q -O /usr/share/keyrings/xpra.asc https://xpra.org/xpra.asc && \
         python3-websockify \
     && rm -rf /var/lib/apt/lists/*
 
+# ── uv (runs MCP servers via uvx, e.g. mcp-server-fetch) ─────────────────────
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
+    cp /root/.local/bin/uv /usr/local/bin/uv && \
+    cp /root/.local/bin/uvx /usr/local/bin/uvx
+
 # ── Install the .deb built in Stage 1 ────────────────────────────────────────
 COPY --from=builder /tmp/claude-desktop.deb /tmp/claude-desktop.deb
 RUN apt-get update && \
@@ -196,6 +201,23 @@ export XDG_CONFIG_HOME="\${HOME}/.config"
 export XDG_CACHE_HOME="\${HOME}/.cache"
 export XDG_DATA_HOME="\${HOME}/.local/share"
 mkdir -p "\${HOME}/.config/Claude/logs" "\${HOME}/.cache/Claude"
+
+# ── Write default MCP config if none exists ───────────────────────────────────
+CONFIG_FILE="\${HOME}/.config/Claude/claude_desktop_config.json"
+if [ ! -f "\${CONFIG_FILE}" ]; then
+    cat > "\${CONFIG_FILE}" <<'CONFIG'
+{
+  "mcpServers": {
+    "fetch": {
+      "command": "uvx",
+      "args": ["mcp-server-fetch"]
+    }
+  }
+}
+CONFIG
+    echo "=== wrote default claude_desktop_config.json ===" >> "\$LOG"
+fi
+
 LOG="${CLAUDE_LOG}"
 echo "=== claude wrapper started at \$(date) ===" >> "\$LOG"
 echo "DISPLAY: \${DISPLAY}" >> "\$LOG"

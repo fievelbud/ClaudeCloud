@@ -96,8 +96,9 @@ Update this tree as directories and files are added to the project.
 
 The image uses a **multi-stage build**:
 
-1. **Builder stage** — clones [`aaddrick/claude-desktop-debian`](https://github.com/aaddrick/claude-desktop-debian)
-   at tag **`v1.3.23+claude1.1.7714`** (pinned — do not upgrade without testing COWORK_VM),
+1. **Builder stage** — clones [`fievelbud/claude-desktop-debian`](https://github.com/fievelbud/claude-desktop-debian)
+   (fork of aaddrick) pinned to commit **`a1a7d55`** = aaddrick tag `v1.3.23+claude1.1.7714`
+   (pinned — do not upgrade without testing COWORK_VM),
    downloads the official Claude Desktop Windows installer, extracts the
    Electron app, patches it for Linux, and packages it as a `.deb`.
 2. **Runtime stage** — installs the `.deb` into a clean Ubuntu 22.04 image,

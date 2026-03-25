@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 # ══════════════════════════════════════════════════════════════════════════════
 # Stage 1 — builder
-# Clones aaddrick/claude-desktop-debian and runs build.sh to produce a .deb
+# Clones fievelbud/claude-desktop-debian and runs build.sh to produce a .deb
 # ══════════════════════════════════════════════════════════════════════════════
 FROM ubuntu:22.04 AS builder
 
@@ -40,7 +40,10 @@ RUN useradd -m builduser && \
 
 # ── Clone the packaging repo ──────────────────────────────────────────────────
 WORKDIR /build
-RUN git clone --depth 1 --branch v1.3.23+claude1.1.7714 https://github.com/aaddrick/claude-desktop-debian.git . && \
+# Pinned to aaddrick tag v1.3.23+claude1.1.7714 (commit a1a7d55).
+# Uses fievelbud fork; depth 10 ensures the pinned commit is reachable.
+RUN git clone --depth 10 https://github.com/fievelbud/claude-desktop-debian.git . && \
+    git checkout a1a7d55c8e853a3e81d6d843b4aa0751353f1303 && \
     chown -R builduser:builduser /build
 
 # ── Build the .deb  ───────────────────────────────────────────────────────────

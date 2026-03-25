@@ -97,7 +97,7 @@ Update this tree as directories and files are added to the project.
 The image uses a **multi-stage build**:
 
 1. **Builder stage** — clones [`fievelbud/claude-desktop-debian`](https://github.com/fievelbud/claude-desktop-debian)
-   (fork of aaddrick) pinned to commit **`a1a7d55`** = aaddrick tag `v1.3.23+claude1.1.7714`
+   (fork of aaddrick) pinned to commit **`18591bd`** = aaddrick tag `v1.3.23+claude1.1.8359`
    (pinned — do not upgrade without testing COWORK_VM),
    downloads the official Claude Desktop Windows installer, extracts the
    Electron app, patches it for Linux, and packages it as a `.deb`.

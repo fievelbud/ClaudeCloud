@@ -40,10 +40,9 @@ RUN useradd -m builduser && \
 
 # ── Clone the packaging repo ──────────────────────────────────────────────────
 WORKDIR /build
-# Pinned to aaddrick tag v1.3.23+claude1.1.8359 (commit 18591bd).
-# Uses fievelbud fork; depth 10 ensures the pinned commit is reachable.
-RUN git clone --depth 10 https://github.com/fievelbud/claude-desktop-debian.git . && \
-    git checkout 18591bd3016cf05d5c16babc5d3e96ea9ae285d3 && \
+# Clones fievelbud fork at HEAD (syncs daily from aaddrick upstream).
+# Always builds the latest Claude Desktop version available in the fork.
+RUN git clone --depth 1 https://github.com/fievelbud/claude-desktop-debian.git . && \
     chown -R builduser:builduser /build
 
 # ── Build the .deb  ───────────────────────────────────────────────────────────

@@ -1,39 +1,120 @@
+# ── Shared config applied to every instance via YAML anchor ──────────────────
+x-claude-common: &claude-common
+  image: claude-desktop:latest
+  environment:
+    DISPLAY_RESOLUTION: "${DISPLAY_RESOLUTION:-1920x1080x24}"
+  security_opt:
+    - seccomp:unconfined
+  restart: unless-stopped
+  healthcheck:
+    test: ["CMD", "bash", "-c", "cat </dev/null >/dev/tcp/localhost/10000"]
+    interval: 10s
+    timeout: 5s
+    retries: 5
+    start_period: 30s
+
 services:
-  claude-desktop:
+
+  # ── Instance 1 — your primary session (existing volumes preserved) ──────────
+  claude-desktop-1:
+    <<: *claude-common
     build:
       context: .
-    image: claude-desktop:latest
-    container_name: claude-desktop
-
-    # ── Display options ────────────────────────────────────────────────────────
-    # Xpra HTML5 client — open http://<host>:<XPRA_PORT> in any browser.
-    # No VNC client or extra software required.
-
+    container_name: claude-desktop-1
     ports:
-      - "${XPRA_PORT:-10000}:10000"
-
-    environment:
-      DISPLAY_RESOLUTION: "${DISPLAY_RESOLUTION:-1920x1080x24}"
-
-    # Persist config and cache across container restarts
+      - "10000:10000"
     volumes:
       - /mnt/Data/claude-config:/home/claude/.config/Claude
       - /mnt/Data/claude-cache:/home/claude/.cache/Claude
       - /mnt/Data/claude-data:/home/claude/data
 
-    # Electron requires relaxed seccomp to start
-    security_opt:
-      - seccomp:unconfined
+  # ── Instances 2–10 — start on demand: docker compose up -d claude-desktop-N ─
+  claude-desktop-2:
+    <<: *claude-common
+    container_name: claude-desktop-2
+    ports:
+      - "10001:10000"
+    volumes:
+      - /mnt/Data/claude-config-2:/home/claude/.config/Claude
+      - /mnt/Data/claude-cache-2:/home/claude/.cache/Claude
+      - /mnt/Data/claude-data-2:/home/claude/data
 
-    restart: unless-stopped
+  claude-desktop-3:
+    <<: *claude-common
+    container_name: claude-desktop-3
+    ports:
+      - "10002:10000"
+    volumes:
+      - /mnt/Data/claude-config-3:/home/claude/.config/Claude
+      - /mnt/Data/claude-cache-3:/home/claude/.cache/Claude
+      - /mnt/Data/claude-data-3:/home/claude/data
 
-    healthcheck:
-      test: ["CMD", "bash", "-c", "cat </dev/null >/dev/tcp/localhost/10000"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
+  claude-desktop-4:
+    <<: *claude-common
+    container_name: claude-desktop-4
+    ports:
+      - "10003:10000"
+    volumes:
+      - /mnt/Data/claude-config-4:/home/claude/.config/Claude
+      - /mnt/Data/claude-cache-4:/home/claude/.cache/Claude
+      - /mnt/Data/claude-data-4:/home/claude/data
 
-volumes:
-  claude_config:
-  claude_cache:
+  claude-desktop-5:
+    <<: *claude-common
+    container_name: claude-desktop-5
+    ports:
+      - "10004:10000"
+    volumes:
+      - /mnt/Data/claude-config-5:/home/claude/.config/Claude
+      - /mnt/Data/claude-cache-5:/home/claude/.cache/Claude
+      - /mnt/Data/claude-data-5:/home/claude/data
+
+  claude-desktop-6:
+    <<: *claude-common
+    container_name: claude-desktop-6
+    ports:
+      - "10005:10000"
+    volumes:
+      - /mnt/Data/claude-config-6:/home/claude/.config/Claude
+      - /mnt/Data/claude-cache-6:/home/claude/.cache/Claude
+      - /mnt/Data/claude-data-6:/home/claude/data
+
+  claude-desktop-7:
+    <<: *claude-common
+    container_name: claude-desktop-7
+    ports:
+      - "10006:10000"
+    volumes:
+      - /mnt/Data/claude-config-7:/home/claude/.config/Claude
+      - /mnt/Data/claude-cache-7:/home/claude/.cache/Claude
+      - /mnt/Data/claude-data-7:/home/claude/data
+
+  claude-desktop-8:
+    <<: *claude-common
+    container_name: claude-desktop-8
+    ports:
+      - "10007:10000"
+    volumes:
+      - /mnt/Data/claude-config-8:/home/claude/.config/Claude
+      - /mnt/Data/claude-cache-8:/home/claude/.cache/Claude
+      - /mnt/Data/claude-data-8:/home/claude/data
+
+  claude-desktop-9:
+    <<: *claude-common
+    container_name: claude-desktop-9
+    ports:
+      - "10008:10000"
+    volumes:
+      - /mnt/Data/claude-config-9:/home/claude/.config/Claude
+      - /mnt/Data/claude-cache-9:/home/claude/.cache/Claude
+      - /mnt/Data/claude-data-9:/home/claude/data
+
+  claude-desktop-10:
+    <<: *claude-common
+    container_name: claude-desktop-10
+    ports:
+      - "10009:10000"
+    volumes:
+      - /mnt/Data/claude-config-10:/home/claude/.config/Claude
+      - /mnt/Data/claude-cache-10:/home/claude/.cache/Claude
+      - /mnt/Data/claude-data-10:/home/claude/data
